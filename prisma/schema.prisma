@@ -1,0 +1,59 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 String   @id @default(cuid())
+  email              String   @unique
+  encrypted_password String
+  cartId             String?  @unique
+
+  addresses Address[]
+  orders Order[]
+
+  defaultAddressId   String?   @unique
+  defaultAddress     Address?  @relation("DefaultAddress", fields: [defaultAddressId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+}
+
+model Address {
+  id        String  @id @default(cuid())
+  address1  String
+  address2  String?
+  city      String
+  province  String
+  zip       String
+  country   String
+  phone     String?
+  firstName String?
+  lastName  String?
+
+  userId    String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  isDefaultForUser User? @relation("DefaultAddress")
+
+  @@index([userId])
+}
+
+model Order {
+  id        String  @id @default(cuid())
+  userId String
+  productId String
+  checkoutId String
+  totalPrice Float
+  isDelivered Boolean
+
+  user User @relation(fields: [userId], references: [id],onDelete: Restrict)
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@index([userId])
+}

@@ -1,8 +1,5 @@
-// /lib/shopify/getProduct.ts
-
 import { gql, GraphQLClient } from "graphql-request";
 
-// Update the Product interface to expect a metafield
 export interface Product {
   id: string;
   handle: string;

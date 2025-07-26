@@ -9,19 +9,19 @@ datasource db {
 }
 
 model User {
-  id                 String   @id @default(cuid())
-  email              String   @unique
+  id                 String  @id @default(cuid())
+  email              String  @unique
   encrypted_password String
-  cartId             String?  @unique
+  cartId             String? @unique
 
   addresses Address[]
-  orders Order[]
+  orders    Order[]
 
-  defaultAddressId   String?   @unique
-  defaultAddress     Address?  @relation("DefaultAddress", fields: [defaultAddressId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  defaultAddressId String?  @unique
+  defaultAddress   Address? @relation("DefaultAddress", fields: [defaultAddressId], references: [id], onDelete: SetNull, onUpdate: Cascade)
 
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Address {
@@ -36,24 +36,24 @@ model Address {
   firstName String?
   lastName  String?
 
-  userId    String
-  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  isDefaultForUser User? @relation("DefaultAddress")
+  userId           String
+  user             User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  isDefaultForUser User?  @relation("DefaultAddress")
 
   @@index([userId])
 }
 
 model Order {
-  id        String  @id @default(cuid())
-  userId String
-  productId String
-  checkoutId String
-  totalPrice Float
+  id          String  @id @default(cuid())
+  userId      String
+  productId   String
+  checkoutId  String
+  totalPrice  Float
   isDelivered Boolean
 
-  user User @relation(fields: [userId], references: [id],onDelete: Restrict)
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([userId])
 }

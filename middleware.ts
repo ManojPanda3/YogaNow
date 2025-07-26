@@ -61,10 +61,7 @@ export async function middleware(request: NextRequest) {
     } catch (error) {
 
       console.error(error);
-      response.headers.set('X-current-user-id', 'null');
     }
-  } else {
-    response.headers.set('X-current-user-id', 'null');
   }
 
   return response;

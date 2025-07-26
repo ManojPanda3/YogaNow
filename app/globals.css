@@ -86,4 +86,8 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  .zoomed img {
+    transform: scale(1.5);
+  }
 }

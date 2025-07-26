@@ -1,6 +1,6 @@
 import { getProducts, ProductSortKeys } from "@/lib/shopify/getProducts";
 import { getShopifyClient } from "@/lib/shopify/getShopifyClient";
-import { ProductCard } from "@/components/ProductCard";
+import ProductCard from "@/components/ProductCard";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { FilterSheet } from "./FilterSheet"; // Import the new client component
@@ -55,7 +55,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
 
       {data?.products.edges.length > 0 ? (
         // Responsive grid for mobile and desktop
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8 sm:gap-x-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
           {data.products.edges.map(({ node: product }) => (
             <ProductCard key={product.id} product={product} />
           ))}

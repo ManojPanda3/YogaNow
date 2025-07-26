@@ -62,30 +62,19 @@ PromoLink.displayName = "PromoLink";
 
 const ListItem = React.forwardRef<
   React.ElementRef<"a">,
-  React.ComponentPropsWithoutRef<"a"> & { icon?: React.ReactNode }
->(({ className, title, children, icon, ...props }, ref) => {
+  React.ComponentPropsWithoutRef<"a">
+>(({ className, ...props }, ref) => {
   return (
     <li>
       <NavigationMenuLink asChild>
         <a
           ref={ref}
           className={cn(
-            "group block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors",
-            "hover:bg-primary/10 hover:text-primary focus:bg-primary/10 focus:text-primary hover:backdrop-blur-sm focus:backdrop-blur-sm",
+            "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
             className
           )}
           {...props}
-        >
-          <div className="flex items-center gap-2">
-            <div className="text-primary transition-colors group-hover:text-primary group-focus:text-primary">
-              {icon}
-            </div>
-            <div className="text-sm font-medium leading-none">{title}</div>
-          </div>
-          <p className="line-clamp-2 text-sm leading-snug text-muted-foreground transition-colors group-hover:text-foreground/90 group-focus:text-foreground/90">
-            {children}
-          </p>
-        </a>
+        />
       </NavigationMenuLink>
     </li>
   );

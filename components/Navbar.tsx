@@ -246,7 +246,7 @@ function Navbar({ isLoggedIn }: { isLoggedIn: boolean }) {
             ) : (
               <>
                 <Button variant="ghost" asChild>
-                  <Link href="/auth/login">Login</Link>
+                  <Link href="/auth/login" className={isTransparent ? 'text-muted' : ''}>Login</Link>
                 </Button>
                 <Button asChild>
                   <Link href="/auth/signup">Sign Up</Link>

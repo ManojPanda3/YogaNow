@@ -100,9 +100,11 @@ const mobileNavLinks = [
   { href: "/#faq", label: "FAQ" },
 ];
 
-function Navbar() {
+
+function Navbar({ isLoggedIn }: { isLoggedIn: boolean }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
   const [scrolled, setScrolled] = React.useState(false);
+
 
   // 2. Get the current path and determine if it's the homepage
   const pathname = usePathname();
@@ -228,17 +230,30 @@ function Navbar() {
         </div>
 
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" asChild>
-            <Link href="/login">
-              <User
-                className={cn(
-                  "h-5 w-5 transition-colors",
-                  isTransparent ? "text-white" : "text-foreground"
-                )}
-              />
-              <span className="sr-only">Login</span>
-            </Link>
-          </Button>
+          <div className="flex items-center gap-2">
+            {isLoggedIn ? (
+              <Button variant="ghost" size="icon" asChild>
+                <Link href="/account">
+                  <User
+                    className={cn(
+                      "h-5 w-5 transition-colors",
+                      isTransparent ? "text-white" : "text-foreground"
+                    )}
+                  />
+                  <span className="sr-only">Account</span>
+                </Link>
+              </Button>
+            ) : (
+              <>
+                <Button variant="ghost" asChild>
+                  <Link href="/auth/login">Login</Link>
+                </Button>
+                <Button asChild>
+                  <Link href="/auth/signup">Sign Up</Link>
+                </Button>
+              </>
+            )}
+          </div>
           <Button variant="ghost" size="icon" asChild>
             <Link href="/cart">
               <ShoppingCart

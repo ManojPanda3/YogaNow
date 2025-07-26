@@ -1,6 +1,5 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Star, ShoppingCart } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -8,29 +7,10 @@ import {
   CardHeader,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { FetchedProducts, getProducts } from "@/lib/shopify/getProducts";
+import { ShoppingCart } from 'lucide-react';
 import { getShopifyClient } from "@/lib/shopify/getShopifyClient";
 import { notFound } from "next/navigation";
-
-// The StarRating component is kept in case you want to use it elsewhere,
-// but it's no longer used in the product card below as the API data doesn't provide a rating.
-const StarRating = ({ rating, className }: { rating: number; className?: string }) => {
-  return (
-    <div className={cn("flex items-center gap-1", className)}>
-      {Array.from({ length: 5 }, (_, i) => (
-        <Star
-          key={i}
-          size={16}
-          className={cn(
-            "transition-colors",
-            rating > i ? "text-yellow-400 fill-yellow-400" : "text-gray-300"
-          )}
-        />
-      ))}
-    </div>
-  );
-};
+import { FetchedProducts, getProducts } from "@/lib/shopify/getProducts";
 
 export const Products = async () => {
   const client = getShopifyClient();

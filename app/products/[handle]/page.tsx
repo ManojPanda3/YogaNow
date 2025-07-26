@@ -1,10 +1,9 @@
-// /app/products/[handle]/page.tsx
-
 import { notFound } from "next/navigation";
+import { getProductByHandle, getProductRecommendations } from "@/lib/shopify/getProduct";
 import { getShopifyClient } from "@/lib/shopify/getShopifyClient";
-import { getProductByHandle, getRelatedProducts } from "@/lib/shopify/getProduct";
-import { ProductView } from "./ProductView";
+import ProductView from "./ProductView";
 import { Metadata } from "next";
+import { HIDDEN_PRODUCT_TAG } from "@/lib/constants";
 
 interface ProductPageProps {
   params: {
@@ -12,59 +11,55 @@ interface ProductPageProps {
   };
 }
 
-// SEO: Dynamically generate metadata
-export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: ProductPageProps): Promise<Metadata> {
   const client = getShopifyClient();
-  if (!client) return {};
-
   const product = await getProductByHandle(client, params.handle);
+  console.log(product)
 
   if (!product) {
-    return {
-      title: "Product not found",
-    };
+    return notFound();
   }
 
-  // The description is stripped of HTML for metadata purposes
-  const cleanDescription = product.description.replace(/(<([^>]+)>)/gi, "").slice(0, 160);
+  const { url, altText: alt } = product.featuredImage || {};
+  const indexable = !product.tags.includes(HIDDEN_PRODUCT_TAG);
 
   return {
-    title: `${product.title} | My Yoga Store`,
-    description: cleanDescription,
-    openGraph: {
-      title: product.title,
-      description: cleanDescription,
-      images: [
-        {
-          url: product.featuredImage?.url,
-          width: 800,
-          height: 600,
-          alt: product.featuredImage?.altText || product.title,
-        },
-      ],
-      // THIS IS THE CORRECTED LINE:
-      type: 'article',
+    title: product.seo.title || product.title,
+    description: product.seo.description || product.description,
+    robots: {
+      index: indexable,
+      follow: indexable,
+      googleBot: {
+        index: indexable,
+        follow: indexable,
+      },
     },
+    openGraph: url
+      ? {
+        images: [
+          {
+            url,
+            width: 1200,
+            height: 630,
+            alt,
+          },
+        ],
+      }
+      : null,
   };
 }
 
-
-// The Page Component itself (Server Component)
 export default async function ProductPage({ params }: ProductPageProps) {
   const client = getShopifyClient();
-  if (!client) {
-    notFound();
-  }
-
   const product = await getProductByHandle(client, params.handle);
 
   if (!product) {
-    notFound();
+    return notFound();
   }
 
-  const relatedProducts = await getRelatedProducts(client, product.id);
+  const relatedProducts = await getProductRecommendations(client, product.id);
 
-  return (
-    <ProductView product={product} relatedProducts={relatedProducts} />
-  );
+  return <ProductView product={product} relatedProducts={relatedProducts} />;
 }

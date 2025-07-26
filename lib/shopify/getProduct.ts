@@ -7,6 +7,11 @@ export interface Product {
   title: string;
   descriptionHtml: string;
   description: string;
+  tags: string[];
+  seo: {
+    title: string;
+    description: string;
+  };
   featuredImage: {
     url: string;
     altText: string;
@@ -24,6 +29,12 @@ export interface Product {
     name: string;
     values: string[];
   }[];
+  priceRange?: {
+    minVariantPrice: {
+      amount: string;
+      currencyCode: string;
+    };
+  };
   variants: {
     edges: {
       node: {
@@ -64,6 +75,11 @@ export async function getProductByHandle(
         vendor
         descriptionHtml
         description
+        tags
+        seo {
+          title
+          description
+        }
         featuredImage {
           url
           altText
@@ -118,6 +134,43 @@ export async function getProductByHandle(
     console.error("Error fetching product by handle:", error);
     // Returning null is better than throwing here for the page to handle it gracefully
     return null;
+  }
+}
+
+export async function getProductRecommendations(client: GraphQLClient, productId: string): Promise<Product[]> {
+  const getProductRecommendationsQuery = gql`
+    query getProductRecommendations($productId: ID!) {
+      productRecommendations(productId: $productId) {
+        id
+        handle
+        title
+        description
+        priceRange {
+          minVariantPrice {
+            amount
+            currencyCode
+          }
+        }
+        featuredImage {
+          url
+          altText
+        }
+      }
+    }
+  `;
+
+  try {
+    const response = await client.request<{ productRecommendations: Product[] }>(
+      getProductRecommendationsQuery,
+      {
+        productId,
+      }
+    );
+
+    return response.productRecommendations || [];
+  } catch (error) {
+    console.error("Error fetching product recommendations:", error);
+    return [];
   }
 }
 

@@ -1,126 +1,143 @@
 "use client";
-
-import * as React from "react";
+import { useState, useRef } from "react";
 import Image from "next/image";
-import Link from "next/link";
-import { ChevronRight, Star } from "lucide-react";
-import { cn } from "@/lib/utils";
-import type { Product } from "@/lib/shopify/getProduct";
 import { ProductPurchaseForm } from "@/components/ProductPurchaseForm";
-import { ProductCard } from "@/components/ProductCard";
+import type { Product } from "@/lib/shopify/getProduct";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import ProductCard from "@/components/ProductCard";
+import { cn } from "@/lib/utils";
 
-// Define a type for the image object for cleaner state management
-type ProductImage = {
-  url: string;
-  altText: string | null;
-};
+interface ProductViewProps {
+  product: Product;
+  relatedProducts: Product[];
+}
+const FPS: number = 36;
 
-export function ProductView({ product, relatedProducts }: { product: Product, relatedProducts: Product[] }) {
-  // State to manage the currently displayed main image
-  const [selectedImage, setSelectedImage] = React.useState<ProductImage | null>(
-    product.featuredImage || product.images?.edges[0]?.node || null
-  );
+type VariantNode = Product['variants']['edges'][0]['node'];
+export default function ProductView({ product, relatedProducts }: ProductViewProps) {
+  const [selectedImage, setSelectedImage] = useState(product.featuredImage);
+  const zoom_lock = useRef<boolean>(false)
+  const imageContainerRef = useRef<HTMLDivElement>(null);
 
-  const reviews = product.reviews?.edges.map(edge => ({
-    id: edge.node.id,
-    author: edge.node.author?.name || "Anonymous",
-    rating: edge.node.rating,
-    content: edge.node.content,
-  })) ?? [];
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (zoom_lock.current) return
+    if (!imageContainerRef.current) return;
 
+    const { left, top, width, height } = imageContainerRef.current.getBoundingClientRect();
+    const x = ((e.clientX - left) / width) * 100;
+    const y = ((e.clientY - top) / height) * 100;
 
-  // Callback to update the image when a variant is selected in the form
-  const handleVariantChange = React.useCallback((variant: Product['variants']['edges'][0]['node']) => {
+    imageContainerRef.current.style.setProperty('--zoom-x', `${x}%`);
+    imageContainerRef.current.style.setProperty('--zoom-y', `${y}%`);
+    zoom_lock.current = true
+    setTimeout(() => {
+      zoom_lock.current = false;
+    }, 1000 / FPS);
+  };
+
+  const handleVariantChange = (variant: VariantNode) => {
     if (variant.image) {
       setSelectedImage(variant.image);
     }
-  }, []);
+  };
 
   return (
-    <main className="container mx-auto px-4 py-8">
-      <div className="flex items-center text-sm text-muted-foreground mb-6">
-        <Link href="/" className="hover:text-primary">Home</Link>
-        <ChevronRight size={16} className="mx-1" />
-        <Link href="/products" className="hover:text-primary">Products</Link>
-        <ChevronRight size={16} className="mx-1" />
-        <span className="text-foreground">{product.title}</span>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-10 lg:gap-16">
-        {/* Left Column: Image Gallery */}
-        <div className="flex flex-col gap-4">
-          <div className="aspect-square w-full relative overflow-hidden rounded-lg shadow-lg bg-gray-100">
-            {selectedImage ? (
+    <div className="bg-background text-foreground">
+      <div className="container mx-auto px-4 py-8 lg:py-16">
+        <div className="grid lg:grid-cols-2 lg:gap-12 xl:gap-16">
+          {/* Image gallery */}
+          <div className="flex flex-col gap-4 group">
+            <div
+              ref={imageContainerRef}
+              className="aspect-square w-full relative overflow-hidden rounded-lg shadow-lg bg-muted cursor-zoom-in"
+              onMouseMove={handleMouseMove}
+              onMouseEnter={() => imageContainerRef.current?.classList.add('zoomed')}
+              onMouseLeave={() => imageContainerRef.current?.classList.remove('zoomed')}
+            >
               <Image
                 src={selectedImage.url}
                 alt={selectedImage.altText || product.title}
                 fill
                 priority
-                className="object-cover"
-                sizes="(max-width: 768px) 100vw, 50vw"
+                className="object-cover transition-transform duration-300 ease-in-out"
+                sizes="(max-width: 1024px) 90vw, 45vw"
+                style={{ transformOrigin: 'var(--zoom-x) var(--zoom-y)' }}
               />
-            ) : (
-              <div className="flex items-center justify-center w-full h-full">
-                <span className="text-sm text-gray-500">No Image Available</span>
-              </div>
-            )}
+            </div>
+            <div className="grid grid-cols-5 gap-2">
+              {product.images.edges.map(({ node: image }, index) => (
+                <button
+                  key={image.url}
+                  className={cn(
+                    "aspect-square w-full relative overflow-hidden rounded-md border-2 transition-all",
+                    selectedImage.url === image.url
+                      ? "border-primary ring-2 ring-primary-focus"
+                      : "border-border hover:border-primary"
+                  )}
+                  onClick={() => setSelectedImage(image)}
+                  aria-label={`View image ${index + 1}`}
+                >
+                  <Image
+                    src={image.url}
+                    alt={image.altText || `Thumbnail ${index + 1}`}
+                    fill
+                    className="object-cover"
+                    sizes="20vw"
+                  />
+                </button>
+              ))}
+            </div>
           </div>
-          <div className="grid grid-cols-5 gap-4">
-            {product?.images?.edges?.map(({ node: image }, index) => (
-              <button
-                key={image.url}
-                className={cn(
-                  "aspect-square w-full relative overflow-hidden rounded-md border-2 transition-all",
-                  selectedImage?.url === image.url
-                    ? "border-primary ring-2 ring-primary"
-                    : "border-transparent hover:border-muted-foreground"
-                )}
-                onClick={() => setSelectedImage(image)}
-                aria-label={`View image ${index + 1}`}
-              >
-                <Image
-                  src={image.url}
-                  alt={image.altText || `Thumbnail ${index + 1}`}
-                  fill
-                  className="object-cover"
-                  sizes="20vw"
-                />
-              </button>
-            ))}
-          </div>
-        </div>
 
-        {/* Right Column: Product Info */}
-        <div className="flex flex-col">
-          <p className="text-sm font-semibold uppercase text-primary mb-2">
-            {product.vendor}
-          </p>
+          {/* Product info */}
+          <div className="lg:sticky top-24 self-start space-y-6">
+            <ProductPurchaseForm product={product} onVariantChange={handleVariantChange} />
+            {product.descriptionHtml.trim() && (
+              <Accordion type="single" collapsible className="w-full">
+                <AccordionItem value="description">
+                  <AccordionTrigger>Product Description</AccordionTrigger>
+                  <AccordionContent>
+                    <div
+                      className="prose prose-sm max-w-none text-muted-foreground"
+                      dangerouslySetInnerHTML={{ __html: product.descriptionHtml }}
+                    />
+                  </AccordionContent>
+                </AccordionItem>
 
-          <ProductPurchaseForm product={product} onVariantChange={handleVariantChange} />
-
-          <div className="mt-8">
-            <h2 className="text-xl font-semibold mb-2">Product Details</h2>
-            <div
-              className="prose prose-sm text-muted-foreground max-w-none"
-              dangerouslySetInnerHTML={{ __html: product.descriptionHtml }}
-            />
+                {/* <AccordionItem value="shipping"> */}
+                {/*   <AccordionTrigger>Shipping & Returns</AccordionTrigger> */}
+                {/*   <AccordionContent> */}
+                {/*     <p className="text-muted-foreground"> */}
+                {/*       Free shipping on orders over $50. Returns accepted within 30 days of purchase. */}
+                {/*     </p> */}
+                {/*   </AccordionContent> */}
+                {/* </AccordionItem> */}
+              </Accordion>)
+            }
           </div>
         </div>
       </div>
 
-      {/* <ReviewsSection reviews={reviews} /> */}
-      {relatedProducts && relatedProducts.length > 0 && (
-        <div className="mt-16">
-          <h2 className="text-3xl font-bold text-center mb-8">
-            You Might Also Like
-          </h2>
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 md:gap-8">
-            {relatedProducts.map((relatedProduct) => (
-              <ProductCard key={relatedProduct.id} product={relatedProduct as any} />
-            ))}
+      {/* Related products */}
+      {relatedProducts.length > 0 && (
+        <div className="py-16 lg:py-24 bg-muted/50">
+          <div className="container mx-auto px-4">
+            <h2 className="text-3xl font-bold tracking-tight text-center mb-10">
+              You Might Also Like
+            </h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+              {relatedProducts.map((relatedProduct) => (
+                <ProductCard key={relatedProduct.id} product={relatedProduct} />
+              ))}
+            </div>
           </div>
         </div>
       )}
-    </main>
+    </div>
   );
 }

@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import type { Product } from "@/lib/shopify/getProduct";
@@ -19,6 +18,7 @@ export function ProductPurchaseForm({ product, onVariantChange }: ProductFormPro
   // Initialize with the first available variant, or the first variant if none are available
   const initialVariant = product.variants.edges.find(edge => edge.node.availableForSale)?.node || product.variants.edges[0]?.node;
   const [selectedVariant, setSelectedVariant] = React.useState<VariantNode | undefined>(initialVariant);
+  const [quantity, setQuantity] = React.useState(1);
 
   // Use an effect to inform the parent component of a variant change
   React.useEffect(() => {
@@ -31,9 +31,18 @@ export function ProductPurchaseForm({ product, onVariantChange }: ProductFormPro
     if (!selectedVariant) return;
     console.log("Adding to cart:", {
       variantId: selectedVariant.id,
-      quantity: 1,
+      quantity: quantity,
     });
-    alert(`Added ${product.title} (${selectedVariant.title}) to cart!`);
+    alert(`Added ${quantity} x ${product.title} (${selectedVariant.title}) to cart!`);
+  };
+
+  const handleBuyNow = () => {
+    if (!selectedVariant) return;
+    console.log("Buying now:", {
+      variantId: selectedVariant.id,
+      quantity: quantity,
+    });
+    alert(`Buying ${quantity} x ${product.title} (${selectedVariant.title}) now!`);
   };
 
   // Group variants by their options for a better UI (e.g., Color, Size)
@@ -97,14 +106,36 @@ export function ProductPurchaseForm({ product, onVariantChange }: ProductFormPro
         Selected: <span className="font-semibold">{selectedVariant?.title?.trim()?.toLowerCase() !== "default title" ? selectedVariant?.title : product.title}</span>
       </p>
 
+      <div className="flex items-center space-x-4">
+        <Label htmlFor="quantity">Quantity:</Label>
+        <input
+          id="quantity"
+          type="number"
+          min="1"
+          value={quantity}
+          onChange={(e) => setQuantity(parseInt(e.target.value))}
+          className="w-20 p-2 border border-muted rounded-md"
+        />
+      </div>
+
       <Button
         type="button"
         size="lg"
-        className="w-full mt-4"
+        className="w-full mt-4 cursor-pointer"
         onClick={handleAddToCart}
         disabled={!selectedVariant || !selectedVariant.availableForSale}
       >
         Add to Cart
+      </Button>
+      <Button
+        type="button"
+        size="lg"
+        variant="secondary"
+        className="w-full mt-2 cursor-pointer"
+        onClick={handleBuyNow}
+        disabled={!selectedVariant || !selectedVariant.availableForSale}
+      >
+        Buy Now
       </Button>
     </div>
   );

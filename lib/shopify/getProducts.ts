@@ -11,6 +11,15 @@ interface Product {
       maxVariantPrice: { amount: string };
     };
     featuredImage: { altText: string; url: string };
+    variants: {
+      edges: {
+        node: {
+          price: {
+            amount: string;
+          };
+        };
+      }[];
+    };
   };
 }
 
@@ -82,6 +91,15 @@ export async function getProducts(
             featuredImage {
               altText
               url
+            }
+            variants(first: 1) {
+              edges {
+                node {
+                  price {
+                    amount
+                  }
+                }
+              }
             }
           }
         }

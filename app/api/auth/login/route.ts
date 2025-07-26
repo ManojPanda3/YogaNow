@@ -1,11 +1,11 @@
 import { generateAccessToken, generateRefreshToken } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { PrismaClient } from "@/lib/generated/prisma/client"
 import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
 
+const prisma = new PrismaClient()
 export async function POST(request: Request) {
   try {
-    if (!prisma) throw new Error("Unable to initiate database")
 
     const body = await request.json()
     if (!(body.email && body.password)) {
@@ -17,14 +17,14 @@ export async function POST(request: Request) {
       }
     })
     if (!exisiting_user) return NextResponse.json({ message: "User already exisit", status: 400, success: false }, { status: 400, statusText: 'Bad Request' })
-    const [password, salt] = exisiting_user.encrypted_password.split('|')
+    const password = body.password
     const isSame: boolean = await bcrypt.compare(password, exisiting_user.encrypted_password)
-    if (!isSame) return NextResponse.json({ message: 'invalid user details', status: 400, success: false }, { status: 400 })
+    if (!isSame) return NextResponse.json({ message: 'Wrong Password', status: 400, success: false }, { status: 400 })
 
     const refresh_token = await generateRefreshToken({ id: exisiting_user.id, email: exisiting_user.email, });
     const access_token = await generateAccessToken({ id: exisiting_user.id, email: exisiting_user.email, });
 
-    const response = NextResponse.json({ access_token, success: true, status: 200 }, { status: 200, statusText: 'Success' })
+    const response = NextResponse.json({ success: true, status: 200 }, { status: 200, statusText: 'Success' })
     response.cookies.set('refresh_token', refresh_token as string, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -33,7 +33,8 @@ export async function POST(request: Request) {
       path: "/",
     })
 
-    response.cookies.set("access_token", access_token, { httpOnly: true, path: "/" });
+    response.cookies.set("access_token", access_token as string, { httpOnly: true, path: "/" });
+    return response;
   } catch (error) {
     return NextResponse.json({ message: error.message, success: false }, { status: 500 })
   }

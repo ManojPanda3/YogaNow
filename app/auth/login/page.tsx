@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2 } from "lucide-react"; // Import the icon
+import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useState, useTransition, FormEvent } from "react";
 import { useRouter } from 'next/navigation';
@@ -11,35 +11,50 @@ import { Toaster, toast } from 'react-hot-toast';
 
 export default function LoginPage() {
   const [isPending, startTransition] = useTransition();
+  const [errors, setErrors] = useState<{ email?: string; password?: string; api?: string }>({});
   const router = useRouter();
 
   async function login(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    setErrors({}); // Reset errors on new submission
 
     const formData = new FormData(event.currentTarget);
-    const email = formData.get("email");
-    const password = formData.get("password");
+    const email = formData.get("email") as string;
+    const password = formData.get("password") as string;
+
+    if (!email || !password) {
+      const newErrors: { email?: string; password?: string } = {};
+      if (!email) newErrors.email = "Email is required.";
+      if (!password) newErrors.password = "Password is required.";
+      setErrors(newErrors);
+      return;
+    }
 
     startTransition(async () => {
       try {
         const response = await fetch('/api/auth/login', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, password }),
         });
 
         if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.message || "Something went wrong");
+          const errorMessage = errorData.message || "Invalid credentials.";
+          // Display error in a toast AND as a form-level message
+          setErrors({ api: errorMessage });
+          toast.error(errorMessage);
+          return;
         }
 
         toast.success("Login successful!");
-        router.push('/dashboard');
+        router.push('/products'); // redirecting user to the products page
+        router.refresh()
 
       } catch (error: any) {
-        toast.error(error.message);
+        const errorMessage = "An unexpected network error occurred.";
+        setErrors({ api: errorMessage });
+        toast.error(errorMessage);
       }
     });
   }
@@ -65,9 +80,9 @@ export default function LoginPage() {
                 name="email"
                 type="email"
                 placeholder="name@example.com"
-                required
                 disabled={isPending}
               />
+              {errors.email && <p className="mt-1 text-sm text-red-500">{errors.email}</p>}
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
@@ -83,10 +98,11 @@ export default function LoginPage() {
                 id="password"
                 name="password"
                 type="password"
-                required
                 disabled={isPending}
               />
+              {errors.password && <p className="mt-1 text-sm text-red-500">{errors.password}</p>}
             </div>
+            {errors.api && <p className="text-sm text-center text-red-500">{errors.api}</p>}
             <Button type="submit" className="w-full" disabled={isPending}>
               {isPending ? (
                 <>

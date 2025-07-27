@@ -25,7 +25,7 @@ export async function middleware(request: NextRequest) {
     try {
       const refreshPayload = await verifyRefreshToken(refresh_token);
 
-      const newAccessToken = await generateAccessToken({ id: refreshPayload.id });
+      const newAccessToken = await generateAccessToken({ id: refreshPayload.id, email: refreshPayload.email });
 
       const response = NextResponse.next();
       response.cookies.set("access_token", newAccessToken, {

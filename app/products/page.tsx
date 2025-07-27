@@ -4,20 +4,25 @@ import ProductCard from "@/components/ProductCard";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { FilterSheet } from "./FilterSheet"; // Import the new client component
+import { Product } from "@/types/shopify";
 
-interface ProductsPageProps {
-  searchParams: {
+export default async function ProductsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{
     q?: string;
     minPrice?: string;
     maxPrice?: string;
     sort?: ProductSortKeys;
     order?: "asc" | "desc";
-  };
-}
-
-export default async function ProductsPage({ searchParams }: ProductsPageProps) {
+  }>
+}) {
   const client = getShopifyClient();
-  const { q, minPrice, maxPrice, sort, order } = searchParams;
+  const { q, minPrice, maxPrice, sort, order } = await searchParams;
+
+  if (!client) {
+    return <div>Error: Could not connect to Shopify</div>;
+  }
 
   const filters = {
     query: q,
@@ -33,14 +38,13 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
   const areFiltersApplied = Object.keys(searchParams).length > 0;
 
   return (
-    // Responsive padding applied here
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 mt-12">
       <header className="mb-8">
         <h1 className="text-4xl font-extrabold tracking-tight text-gray-900 sm:text-5xl">
           Our Products
         </h1>
         <p className="mt-4 text-lg text-gray-600 max-w-2xl">
-          Discover our curated collection. Use the filters to find exactly what you're looking for.
+          Discover our curated collection. Use the filters to find exactly what you&apos;re looking for.
         </p>
       </header>
 
@@ -53,11 +57,11 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
         )}
       </div>
 
-      {data?.products.edges.length > 0 ? (
+      {data && data.products.edges.length > 0 ? (
         // Responsive grid for mobile and desktop
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
           {data.products.edges.map(({ node: product }) => (
-            <ProductCard key={product.id} product={product} />
+            <ProductCard key={product.id} product={product as unknown as Product} />
           ))}
         </div>
       ) : (

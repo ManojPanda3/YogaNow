@@ -51,8 +51,12 @@ export default function LoginPage() {
         router.push('/products'); // redirecting user to the products page
         router.refresh()
 
-      } catch (error: any) {
-        const errorMessage = "An unexpected network error occurred.";
+      } catch (_error) {
+        let errorMessage = "An unexpected network error occurred.";
+        if (_error instanceof Error) {
+          errorMessage = _error.message;
+          console.log(_error.message); // Log the error message as requested
+        }
         setErrors({ api: errorMessage });
         toast.error(errorMessage);
       }
@@ -115,7 +119,7 @@ export default function LoginPage() {
             </Button>
           </form>
           <p className="text-sm text-center text-muted-foreground">
-            Don't have an account?{" "}
+            Don&apos;t have an account?{" "}
             <Link
               href="/auth/signup"
               className="font-medium text-primary hover:underline"

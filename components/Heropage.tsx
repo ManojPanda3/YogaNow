@@ -2,12 +2,12 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { motion, Variants } from "framer-motion";
 import { Button } from "@/components/ui/button"; // Assuming you have a Button component
 
 const HeroPage = () => {
   // Animation variants for the container to orchestrate children animations
-  const containerVariants = {
+  const containerVariants: Variants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
@@ -18,7 +18,7 @@ const HeroPage = () => {
   };
 
   // Animation variants for the text and button elements
-  const itemVariants = {
+  const itemVariants: Variants = {
     hidden: { y: 20, opacity: 0 },
     visible: {
       y: 0,

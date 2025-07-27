@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams, useRouter } from "next/navigation";
-import { useState, FormEvent, HTMLInputTypeAttribute, useRef } from "react";
+import { useState, FormEvent, useRef } from "react";
 import { ProductSortKeys } from "@/lib/shopify/getProducts";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,7 +51,7 @@ export function FilterSheet() {
     // if (!formData.get("q")) newParams.delete("q");
     //
     // router.push(`/products?${newParams.toString()}`);
-    handleSearch(formData.get('q') || "", formData.get('sort'), formData.get('order'), priceRange[0].toString(), priceRange[1].toString())
+    handleSearch(formData.get('q') as string || "", formData.get('sort') as string, formData.get('order') as string, priceRange[0].toString(), priceRange[1].toString())
   };
   function handleSearch(q: string | null = null, sort: string | null = null, order: string | null = null, minPrice: string | null = null, maxPrice: string | null = null) {
     const newParams = new URLSearchParams(searchParams.toString())
@@ -96,7 +96,7 @@ export function FilterSheet() {
           ref={searchBarRef}
           className="pr-12 "
         />
-        <Search className="absolute right-2 top-1/8 cursor-pointer" onClick={() => handleSearch(searchBarRef.current.value)} />
+        <Search className="absolute right-2 top-1/8 cursor-pointer" onClick={() => searchBarRef.current && handleSearch(searchBarRef.current.value)} />
       </div>
       <Sheet >
         <SheetTrigger asChild>
@@ -110,7 +110,7 @@ export function FilterSheet() {
             <SheetHeader className="mb-6">
               <SheetTitle>Refine Your Search</SheetTitle>
               <SheetDescription>
-                Use the controls below to find exactly what you're looking for.
+                Use the controls below to find exactly what you&apos;re looking for.
               </SheetDescription>
             </SheetHeader>
 

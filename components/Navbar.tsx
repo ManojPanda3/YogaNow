@@ -3,8 +3,8 @@
 import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation"; // 1. Import usePathname
-import { Leaf, Waves, Menu, ShoppingCart, User } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { Leaf, Menu, ShoppingCart, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,11 +16,13 @@ import {
   NavigationMenuTrigger,
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
+import { useCart } from "@/contexts/CartContext"; // 1. Import useCart
+import { CartSlider } from "./CartSlider"; // 2. Import CartSlider
 
 const PromoLink = React.forwardRef<
   React.ElementRef<"a">,
   React.ComponentPropsWithoutRef<"a">
->(({ className, title, children, ...props }, ref) => {
+>(({ className, ...props }, ref) => {
   return (
     <li className="row-span-3">
       <NavigationMenuLink asChild>
@@ -92,10 +94,12 @@ const mobileNavLinks = [
 
 function Navbar({ isLoggedIn }: { isLoggedIn: boolean }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
+  const [isCartSliderOpen, setIsCartSliderOpen] = React.useState(false); // 3. State for CartSlider
   const [scrolled, setScrolled] = React.useState(false);
 
+  const { cartItemCount } = useCart(); // 4. Get cart item count
 
-  // 2. Get the current path and determine if it's the homepage
+
   const pathname = usePathname();
   const isHomePage = pathname === "/";
   const isAboutPage = pathname === "/about";
@@ -125,167 +129,181 @@ function Navbar({ isLoggedIn }: { isLoggedIn: boolean }) {
     );
 
   return (
-    <header
-      className={cn(
-        "fixed top-0 z-50 w-full transition-all duration-300 ease-in-out",
-        isTransparent
-          ? "border-transparent"
-          : "border-b bg-background/80 backdrop-blur-lg"
-      )}
-    >
-      <div className="flex h-14 items-center justify-between px-6">
-        <div className="flex items-center gap-6">
-          <Link href="/" className="flex items-center space-x-2">
-            <Leaf
-              className={cn(
-                "h-6 w-6 transition-colors",
-                isTransparent ? "text-white" : "text-primary"
-              )}
-            />
-            <span
-              className={cn(
-                "hidden font-bold transition-colors sm:inline-block",
-                isTransparent ? "text-white" : "text-foreground"
-              )}
-            >
-              YogaNow
-            </span>
-          </Link>
-          <div className="hidden md:flex">
-            <NavigationMenu>
-              <NavigationMenuList>
-                <NavigationMenuItem>
-                  <NavigationMenuLink href="/" className={navLinkAndTriggerClasses()}>
-                    Home
-                  </NavigationMenuLink>
-                </NavigationMenuItem>
+    <>
+      <header
+        className={cn(
+          "fixed top-0 z-50 w-full transition-all duration-300 ease-in-out",
+          isTransparent
+            ? "border-transparent"
+            : "border-b bg-background/80 backdrop-blur-lg"
+        )}
+      >
+        <div className="flex h-14 items-center justify-between px-6">
+          <div className="flex items-center gap-6">
+            <Link href="/" className="flex items-center space-x-2">
+              <Leaf
+                className={cn(
+                  "h-6 w-6 transition-colors",
+                  isTransparent ? "text-white" : "text-primary"
+                )}
+              />
+              <span
+                className={cn(
+                  "hidden font-bold transition-colors sm:inline-block",
+                  isTransparent ? "text-white" : "text-foreground"
+                )}
+              >
+                YogaNow
+              </span>
+            </Link>
+            <div className="hidden md:flex">
+              <NavigationMenu>
+                <NavigationMenuList>
+                  <NavigationMenuItem>
+                    <NavigationMenuLink href="/" className={navLinkAndTriggerClasses()}>
+                      Home
+                    </NavigationMenuLink>
+                  </NavigationMenuItem>
 
-                <NavigationMenuItem>
-                  <NavigationMenuTrigger className={navLinkAndTriggerClasses(true)}>
-                    Products
-                  </NavigationMenuTrigger>
-                  <NavigationMenuContent>
-                    <ul className="grid gap-3 p-4 text-foreground md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr] bg-transparent">
-                      <PromoLink href="/" />
-                      <ListItem
-                        href="/products/cloths"
-                        title="Yoga Cloths"
-                        icon={<Leaf className="h-4 w-4" />}
-                      >
-                        Sustainable and breathable cloths made from organic
-                        cottons.
-                      </ListItem>
-                      <ListItem
-                        href="/products/yogamats"
-                        title="Yoga Mats"
-                        icon={<Waves className="h-4 w-4" />}
-                      >
-                        Eco-friendly, non-slip mats for a grounded and secure
-                        practice.
-                      </ListItem>
-                    </ul>
-                  </NavigationMenuContent>
-                </NavigationMenuItem>
+                  <NavigationMenuItem>
+                    <NavigationMenuTrigger className={navLinkAndTriggerClasses(true)}>
+                      Products
+                    </NavigationMenuTrigger>
+                    <NavigationMenuContent>
+                      <ul className="grid gap-3 p-4 text-foreground md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr] bg-transparent">
+                        <PromoLink href="/" />
+                        <ListItem
+                          href="/products/cloths"
+                          title="Yoga Cloths"
+                        >
+                          Sustainable and breathable cloths made from organic
+                          cottons.
+                        </ListItem>
+                        <ListItem
+                          href="/products/yogamats"
+                          title="Yoga Mats"
+                        >
+                          Eco-friendly, non-slip mats for a grounded and secure
+                          practice.
+                        </ListItem>
+                      </ul>
+                    </NavigationMenuContent>
+                  </NavigationMenuItem>
 
-                <NavigationMenuItem>
-                  <NavigationMenuLink
-                    href="/contact"
-                    className={navLinkAndTriggerClasses()}
-                  >
-                    Contact
-                  </NavigationMenuLink>
-                </NavigationMenuItem>
+                  <NavigationMenuItem>
+                    <NavigationMenuLink
+                      href="/contact"
+                      className={navLinkAndTriggerClasses()}
+                    >
+                      Contact
+                    </NavigationMenuLink>
+                  </NavigationMenuItem>
 
-                <NavigationMenuItem>
-                  <NavigationMenuLink
-                    href="/about"
-                    className={navLinkAndTriggerClasses()}
-                  >
-                    About Us
-                  </NavigationMenuLink>
-                </NavigationMenuItem>
+                  <NavigationMenuItem>
+                    <NavigationMenuLink
+                      href="/about"
+                      className={navLinkAndTriggerClasses()}
+                    >
+                      About Us
+                    </NavigationMenuLink>
+                  </NavigationMenuItem>
 
-                <NavigationMenuItem>
-                  <NavigationMenuLink
-                    href="/#faq"
-                    className={navLinkAndTriggerClasses()}
-                  >
-                    FAQ
-                  </NavigationMenuLink>
-                </NavigationMenuItem>
-              </NavigationMenuList>
-            </NavigationMenu>
+                  <NavigationMenuItem>
+                    <NavigationMenuLink
+                      href="/#faq"
+                      className={navLinkAndTriggerClasses()}
+                    >
+                      FAQ
+                    </NavigationMenuLink>
+                  </NavigationMenuItem>
+                </NavigationMenuList>
+              </NavigationMenu>
+            </div>
           </div>
-        </div>
 
-        <div className="flex items-center gap-2">
           <div className="flex items-center gap-2">
-            {isLoggedIn ? (
-              <Button variant="ghost" size="icon" asChild>
-                <Link href="/account">
-                  <User
-                    className={cn(
-                      "h-5 w-5 transition-colors",
-                      isTransparent ? "text-white" : "text-foreground"
-                    )}
-                  />
-                  <span className="sr-only">Account</span>
-                </Link>
-              </Button>
-            ) : (
-              <>
-                <Button variant="ghost" asChild>
-                  <Link href="/auth/login" className={isTransparent ? 'text-muted' : ''}>Login</Link>
+            <div className="flex items-center gap-2">
+              {isLoggedIn ? (
+                <Button variant="ghost" size="icon" asChild>
+                  <Link href="/account">
+                    <User
+                      className={cn(
+                        "h-5 w-5 transition-colors",
+                        isTransparent ? "text-white" : "text-foreground"
+                      )}
+                    />
+                    <span className="sr-only">Account</span>
+                  </Link>
                 </Button>
-                <Button asChild>
-                  <Link href="/auth/signup">Sign Up</Link>
-                </Button>
-              </>
-            )}
-          </div>
-          <Button variant="ghost" size="icon" asChild>
-            <Link href="/cart">
+              ) : (
+                <>
+                  <Button variant="ghost" asChild>
+                    <Link href="/auth/login" className={isTransparent ? 'text-muted' : ''}>Login</Link>
+                  </Button>
+                  <Button asChild>
+                    <Link href="/auth/signup">Sign Up</Link>
+                  </Button>
+                </>
+              )}
+            </div>
+            {/* 5. Update ShoppingCart to open slider */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsCartSliderOpen(true)}
+              className="relative"
+            >
               <ShoppingCart
                 className={cn(
                   "h-5 w-5 transition-colors",
                   isTransparent ? "text-white" : "text-foreground"
                 )}
               />
+              {cartItemCount > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
+                  {cartItemCount}
+                </span>
+              )}
               <span className="sr-only">Shopping Cart</span>
-            </Link>
-          </Button>
-
-          <div className="md:hidden">
-            <Button variant="ghost" size="icon" onClick={toggleMobileMenu}>
-              <Menu
-                className={cn(
-                  "h-5 w-5 transition-colors",
-                  isTransparent ? "text-white" : "text-foreground"
-                )}
-              />
-              <span className="sr-only">Toggle Menu</span>
             </Button>
+
+            <div className="md:hidden">
+              <Button variant="ghost" size="icon" onClick={toggleMobileMenu}>
+                <Menu
+                  className={cn(
+                    "h-5 w-5 transition-colors",
+                    isTransparent ? "text-white" : "text-foreground"
+                  )}
+                />
+                <span className="sr-only">Toggle Menu</span>
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div
-        className={cn(
-          "absolute top-14 left-0 z-40 w-full origin-top transform bg-background/95 backdrop-blur transition-transform duration-300 ease-in-out md:hidden",
-          isMobileMenuOpen ? "scale-y-100" : "scale-y-0"
-        )}
-      >
-        <nav className="flex flex-col gap-2 p-4" onClick={() => setIsMobileMenuOpen(false)}>
-          {mobileNavLinks.map(({ href, label }) => (
-            <Link key={label} href={href}>
-              <Button variant="link" className="w-full justify-start text-foreground text-md">
-                {label}
-              </Button>
-            </Link>
-          ))}
-        </nav>
-      </div>
-    </header>
+        <div
+          className={cn(
+            "absolute top-14 left-0 z-40 w-full origin-top transform bg-background/95 backdrop-blur transition-transform duration-300 ease-in-out md:hidden",
+            isMobileMenuOpen ? "scale-y-100" : "scale-y-0"
+          )}
+        >
+          <nav className="flex flex-col gap-2 p-4" onClick={() => setIsMobileMenuOpen(false)}>
+            {mobileNavLinks.map(({ href, label }) => (
+              <Link key={label} href={href}>
+                <Button variant="link" className="w-full justify-start text-foreground text-md">
+                  {label}
+                </Button>
+              </Link>
+            ))}
+          </nav>
+        </div>
+      </header>
+      {/* 6. Add CartSlider component */}
+      <CartSlider
+        isOpen={isCartSliderOpen}
+        onOpenChange={setIsCartSliderOpen}
+      />
+    </>
   );
 }
 

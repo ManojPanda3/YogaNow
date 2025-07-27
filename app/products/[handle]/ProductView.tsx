@@ -2,7 +2,7 @@
 import { useState, useRef } from "react";
 import Image from "next/image";
 import { ProductPurchaseForm } from "@/components/ProductPurchaseForm";
-import type { Product } from "@/lib/shopify/getProduct";
+import type { Product } from "@/types/shopify";
 import {
   Accordion,
   AccordionContent,
@@ -18,7 +18,7 @@ interface ProductViewProps {
 }
 const FPS: number = 36;
 
-type VariantNode = Product['variants']['edges'][0]['node'];
+type VariantNode = Product['variants'] extends infer V ? (V extends { edges: (infer E)[] } ? (E extends { node: infer N } ? N : never) : never) : never;
 export default function ProductView({ product, relatedProducts }: ProductViewProps) {
   const [selectedImage, setSelectedImage] = useState(product.featuredImage);
   const zoom_lock = useRef<boolean>(false)
@@ -48,7 +48,7 @@ export default function ProductView({ product, relatedProducts }: ProductViewPro
 
   return (
     <div className="bg-background text-foreground">
-      <div className="container mx-auto px-4 py-8 lg:py-16">
+      <div className="container mx-auto px-4 py-16 lg:py-20">
         <div className="grid lg:grid-cols-2 lg:gap-12 xl:gap-16">
           {/* Image gallery */}
           <div className="flex flex-col gap-4 group">
@@ -59,7 +59,7 @@ export default function ProductView({ product, relatedProducts }: ProductViewPro
               onMouseEnter={() => imageContainerRef.current?.classList.add('zoomed')}
               onMouseLeave={() => imageContainerRef.current?.classList.remove('zoomed')}
             >
-              <Image
+              {selectedImage && <Image
                 src={selectedImage.url}
                 alt={selectedImage.altText || product.title}
                 fill
@@ -67,15 +67,15 @@ export default function ProductView({ product, relatedProducts }: ProductViewPro
                 className="object-cover transition-transform duration-300 ease-in-out"
                 sizes="(max-width: 1024px) 90vw, 45vw"
                 style={{ transformOrigin: 'var(--zoom-x) var(--zoom-y)' }}
-              />
+              />}
             </div>
             <div className="grid grid-cols-5 gap-2">
-              {product.images.edges.map(({ node: image }, index) => (
+              {product.images?.edges.map(({ node: image }:{node: {url:string, altText:string}}, index:number) => (
                 <button
                   key={image.url}
                   className={cn(
                     "aspect-square w-full relative overflow-hidden rounded-md border-2 transition-all",
-                    selectedImage.url === image.url
+                    selectedImage?.url === image.url
                       ? "border-primary ring-2 ring-primary-focus"
                       : "border-border hover:border-primary"
                   )}
@@ -97,14 +97,14 @@ export default function ProductView({ product, relatedProducts }: ProductViewPro
           {/* Product info */}
           <div className="lg:sticky top-24 self-start space-y-6">
             <ProductPurchaseForm product={product} onVariantChange={handleVariantChange} />
-            {product.descriptionHtml.trim() && (
+            {product.descriptionHtml && product.descriptionHtml.trim() && (
               <Accordion type="single" collapsible className="w-full">
                 <AccordionItem value="description">
                   <AccordionTrigger>Product Description</AccordionTrigger>
                   <AccordionContent>
                     <div
                       className="prose prose-sm max-w-none text-muted-foreground"
-                      dangerouslySetInnerHTML={{ __html: product.descriptionHtml }}
+                      dangerouslySetInnerHTML={{ __html: product.descriptionHtml || '' }}
                     />
                   </AccordionContent>
                 </AccordionItem>

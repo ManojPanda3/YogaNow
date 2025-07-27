@@ -5,5 +5,8 @@ export default async function NavbarWrapper() {
   const headersList = await headers();
   const isLoggedIn = headersList.has("X-current-user-id");
 
-  return <Navbar isLoggedIn={isLoggedIn} />;
+  return (
+    <Navbar isLoggedIn={isLoggedIn} />
+
+  );
 }

@@ -48,7 +48,7 @@ export default function ProductView({ product, relatedProducts }: ProductViewPro
 
   return (
     <div className="bg-background text-foreground">
-      <div className="container mx-auto px-4 py-8 lg:py-16">
+      <div className="container mx-auto px-4 py-16 lg:py-20">
         <div className="grid lg:grid-cols-2 lg:gap-12 xl:gap-16">
           {/* Image gallery */}
           <div className="flex flex-col gap-4 group">

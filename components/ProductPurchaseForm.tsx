@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import type { Product } from "@/lib/shopify/getProduct";
 import { cn } from "@/lib/utils";
+import { useCart } from "@/contexts/CartContext";
 
-// Define the variant node type for clarity
 type VariantNode = Product['variants']['edges'][0]['node'];
 
 interface ProductFormProps {
@@ -15,25 +15,25 @@ interface ProductFormProps {
 }
 
 export function ProductPurchaseForm({ product, onVariantChange }: ProductFormProps) {
-  // Initialize with the first available variant, or the first variant if none are available
+  const { addToCart, isLoading } = useCart();
+
   const initialVariant = product.variants.edges.find(edge => edge.node.availableForSale)?.node || product.variants.edges[0]?.node;
   const [selectedVariant, setSelectedVariant] = React.useState<VariantNode | undefined>(initialVariant);
   const [quantity, setQuantity] = React.useState(1);
 
-  // Use an effect to inform the parent component of a variant change
   React.useEffect(() => {
     if (selectedVariant) {
       onVariantChange(selectedVariant);
     }
   }, [selectedVariant, onVariantChange]);
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (!selectedVariant) return;
-    console.log("Adding to cart:", {
-      variantId: selectedVariant.id,
-      quantity: quantity,
-    });
-    alert(`Added ${quantity} x ${product.title} (${selectedVariant.title}) to cart!`);
+    try {
+      await addToCart(selectedVariant.id, quantity);
+    } catch (error) {
+      console.error("Failed to add item to cart:", error);
+    }
   };
 
   const handleBuyNow = () => {
@@ -45,14 +45,12 @@ export function ProductPurchaseForm({ product, onVariantChange }: ProductFormPro
     alert(`Buying ${quantity} x ${product.title} (${selectedVariant.title}) now!`);
   };
 
-  // Group variants by their options for a better UI (e.g., Color, Size)
   const options = product.options.map(option => ({
     ...option,
     values: Array.from(new Set(product.variants.edges.map(edge => {
       return edge.node.selectedOptions.find(opt => opt.name === option.name)!.value;
     })))
   }));
-
 
   return (
     <div className="flex flex-col space-y-4">
@@ -70,12 +68,10 @@ export function ProductPurchaseForm({ product, onVariantChange }: ProductFormPro
         {selectedVariant?.availableForSale ? "In Stock" : "Out of Stock"}
       </p>
 
-      {/* Render options dynamically */}
       {product.variants.edges.length > 1 && options.map(option => (
         <div key={option.id}>
           <Label className="text-base font-medium">{option.name}:</Label>
           <div className="flex flex-wrap gap-2 mt-2">
-            {/* This is a simplified variant selector. A more complex one would handle multi-option products. */}
             {product.variants.edges.map(({ node: variant }) => (
               <button
                 key={variant.id}
@@ -123,9 +119,9 @@ export function ProductPurchaseForm({ product, onVariantChange }: ProductFormPro
         size="lg"
         className="w-full mt-4 cursor-pointer"
         onClick={handleAddToCart}
-        disabled={!selectedVariant || !selectedVariant.availableForSale}
+        disabled={!selectedVariant || !selectedVariant.availableForSale || isLoading}
       >
-        Add to Cart
+        {isLoading ? "Adding..." : "Add to Cart"}
       </Button>
       <Button
         type="button"

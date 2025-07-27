@@ -4,6 +4,7 @@ import { getShopifyClient } from "@/lib/shopify/getShopifyClient";
 import ProductView from "./ProductView";
 import { Metadata } from "next";
 import { HIDDEN_PRODUCT_TAG } from "@/lib/constants";
+import { GraphQLClient } from "graphql-request";
 
 interface ProductPageProps {
   params: {
@@ -52,7 +53,7 @@ export async function generateMetadata({
 }
 
 export default async function ProductPage({ params }: ProductPageProps) {
-  const client = getShopifyClient();
+  const client = getShopifyClient() as GraphQLClient;
   const product = await getProductByHandle(client, params.handle);
 
   if (!product) {

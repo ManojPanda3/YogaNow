@@ -1,21 +1,53 @@
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode } from "react";
+import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo } from "react";
 
-interface CartItem {
-  id: number;
-  name: string;
-  price: number;
+// This interface should match the structure of a cart line item from your Shopify API
+interface CartLineItem {
+  id: string; // This is the line ID, e.g., "gid://shopify/CartLine/..."
   quantity: number;
-  image: string;
+  merchandise: {
+    id: string; // This is the variant ID, e.g., "gid://shopify/ProductVariant/..."
+    title: string;
+    image: {
+      url: string;
+      altText: string | null;
+    };
+    product: {
+      title: string;
+      handle: string;
+    };
+  };
+  estimatedCost: {
+    totalAmount: {
+      amount: string;
+      currencyCode: string;
+    };
+  };
+}
+
+// Interface for the entire cart object returned from your API
+interface Cart {
+  id: string;
+  lines: {
+    edges: { node: CartLineItem }[];
+  };
+  estimatedCost: {
+    totalAmount: {
+      amount: string;
+      currencyCode: string;
+    };
+  };
 }
 
 interface CartContextType {
-  cart: CartItem[];
-  addToCart: (item: Omit<CartItem, "quantity">) => void;
-  updateCart: (id: number, quantity: number) => void;
-  removeFromCart: (id: number) => void;
+  cart: Cart | null;
+  cartItems: CartLineItem[];
   cartItemCount: number;
+  isLoading: boolean;
+  addToCart: (merchandiseId: string, quantity: number) => Promise<void>;
+  updateCartQuantity: (lineId: string, quantity: number) => Promise<void>;
+  removeFromCart: (lineId: string) => Promise<void>;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -29,47 +61,104 @@ export const useCart = () => {
 };
 
 export const CartProvider = ({ children }: { children: ReactNode }) => {
-  const [cart, setCart] = useState<CartItem[]>([
-    {
-      id: 1,
-      name: "Organic Cotton Yoga Mat",
-      price: 79.99,
-      quantity: 1,
-      image: "https://images.unsplash.com/photo-1591291621365-d648b2114774?q=80&w=2070",
-    },
-  ]);
+  const [cart, setCart] = useState<Cart | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const addToCart = (item: Omit<CartItem, "quantity">) => {
-    setCart((prevCart) => {
-      const existingItem = prevCart.find((cartItem) => cartItem.id === item.id);
-      if (existingItem) {
-        return prevCart.map((cartItem) =>
-          cartItem.id === item.id
-            ? { ...cartItem, quantity: cartItem.quantity + 1 }
-            : cartItem
-        );
+  // Fetch the cart on initial load
+  useEffect(() => {
+    const fetchCart = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch("/api/cart");
+        if (!response.ok) throw new Error("Failed to fetch cart");
+        const cartData = await response.json();
+        setCart(cartData);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setIsLoading(false);
       }
-      return [...prevCart, { ...item, quantity: 1 }];
-    });
+    };
+    fetchCart();
+  }, []);
+
+  // Function to add an item to the cart
+  const addToCart = async (merchandiseId: string, quantity: number) => {
+    try {
+      setIsLoading(true);
+      const response = await fetch("/api/cart", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ merchandiseId, quantity }),
+      });
+      if (!response.ok) throw new Error("Failed to add to cart");
+      const updatedCart = await response.json();
+      setCart(updatedCart);
+    } catch (error) {
+      console.error(error);
+      // Here you could add user-facing error notifications
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const updateCart = (id: number, quantity: number) => {
-    setCart((prevCart) =>
-      prevCart.map((item) =>
-        item.id === id ? { ...item, quantity } : item
-      )
-    );
+  // Function to update item quantity
+  const updateCartQuantity = async (lineId: string, quantity: number) => {
+    if (quantity === 0) {
+      await removeFromCart(lineId);
+      return;
+    }
+    try {
+      setIsLoading(true);
+      const response = await fetch("/api/cart", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lineId, quantity }),
+      });
+      if (!response.ok) throw new Error("Failed to update cart");
+      const updatedCart = await response.json();
+      setCart(updatedCart);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const removeFromCart = (id: number) => {
-    setCart((prevCart) => prevCart.filter((item) => item.id !== id));
+  // Function to remove an item from the cart
+  const removeFromCart = async (lineId: string) => {
+    try {
+      setIsLoading(true);
+      const response = await fetch("/api/cart", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lineId }),
+      });
+      if (!response.ok) throw new Error("Failed to remove from cart");
+      const updatedCart = await response.json();
+      setCart(updatedCart);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const cartItemCount = cart.reduce((count, item) => count + item.quantity, 0);
+  // Memoized values to prevent unnecessary re-renders
+  const cartItems = useMemo(() => cart?.lines.edges.map(edge => edge.node) ?? [], [cart]);
+  const cartItemCount = useMemo(() => cartItems.reduce((count, item) => count + item.quantity, 0), [cartItems]);
 
   return (
     <CartContext.Provider
-      value={{ cart, addToCart, updateCart, removeFromCart, cartItemCount }}
+      value={{
+        cart,
+        cartItems,
+        cartItemCount,
+        isLoading,
+        addToCart,
+        updateCartQuantity,
+        removeFromCart,
+      }}
     >
       {children}
     </CartContext.Provider>

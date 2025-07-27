@@ -62,10 +62,10 @@ export default function ProductCard({ product }: { product: Product }) {
             'Price not available'
           )}
         </p>
-        <Button size="icon" variant="outline">
+        <Link className="" href={`/products/${product.handle}`}>
           <ShoppingCart className="h-4 w-4" />
           <span className="sr-only">Add to Cart</span>
-        </Button>
+        </Link>
       </CardFooter>
     </Card>
   );

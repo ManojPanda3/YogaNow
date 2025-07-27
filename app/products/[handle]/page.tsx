@@ -2,33 +2,35 @@ import { notFound } from "next/navigation";
 import { getProductByHandle, getProductRecommendations } from "@/lib/shopify/getProduct";
 import { getShopifyClient } from "@/lib/shopify/getShopifyClient";
 import ProductView from "./ProductView";
-import { Metadata } from "next";
+import type { Metadata } from "next";
 import { HIDDEN_PRODUCT_TAG } from "@/lib/constants";
 import { GraphQLClient } from "graphql-request";
 
-interface ProductPageProps {
-  params: {
-    handle: string;
-  };
-}
+// Define a reusable type for the page's props
+type ProductPageProps = {
+  params: Promise<{ handle: string }>;
+};
 
 export async function generateMetadata({
   params,
 }: ProductPageProps): Promise<Metadata> {
   const client = getShopifyClient();
-  const product = await getProductByHandle(client, params.handle);
-  console.log(product)
+  const handle = (await params).handle
+  if (!client) {
+    throw new Error("Shopify client not initialized");
+  }
+  const product = await getProductByHandle(client, handle);
 
   if (!product) {
     return notFound();
   }
 
   const { url, altText: alt } = product.featuredImage || {};
-  const indexable = !product.tags.includes(HIDDEN_PRODUCT_TAG);
+  const indexable = !product.tags?.includes(HIDDEN_PRODUCT_TAG);
 
   return {
-    title: product.seo.title || product.title,
-    description: product.seo.description || product.description,
+    title: product.seo?.title || product.title,
+    description: product.seo?.description || product.description,
     robots: {
       index: indexable,
       follow: indexable,
@@ -54,7 +56,8 @@ export async function generateMetadata({
 
 export default async function ProductPage({ params }: ProductPageProps) {
   const client = getShopifyClient() as GraphQLClient;
-  const product = await getProductByHandle(client, params.handle);
+  const { handle } = await params;
+  const product = await getProductByHandle(client, handle);
 
   if (!product) {
     return notFound();

@@ -8,7 +8,7 @@ export default function ContactPage() {
     <div className="container mx-auto px-4 py-12 mt-10">
       <h1 className="text-4xl font-bold text-center mb-8">Contact Us</h1>
       <p className="text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
-        Have a question or need assistance? Fill out the form below and we'll get back to you as soon as possible.
+        Have a question or need assistance? Fill out the form below and we&apos;ll get back to you as soon as possible.
       </p>
 
       <div className="max-w-lg mx-auto bg-card p-8 rounded-lg shadow-lg">

@@ -28,7 +28,7 @@ async function getCartId(request: NextRequest): Promise<string | null> {
     });
     return user?.cartId ?? null;
   }
-  return cookies().get(CART_ID_COOKIE)?.value ?? null;
+  return (await cookies()).get(CART_ID_COOKIE)?.value ?? null;
 }
 
 export async function GET(request: NextRequest) {
@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const userId = getUserId(request);
-  let cartId = await getCartId(request);
+  const cartId = await getCartId(request);
 
   try {
     const { merchandiseId, quantity } = await request.json();
@@ -55,19 +55,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: "Missing merchandiseId or quantity" }, { status: 400 });
     }
 
-    // This will hold the final response so we can attach a cookie to it if needed.
-    let response: NextResponse;
-
     if (!cartId) {
       // 1. Correctly call 'createCart' to make a new cart.
       const cartData = await addToCart(shopifyClient, merchandiseId, quantity);
       console.log("Cart created Successfully ")
       console.log(cartData)
       const newCartId = cartData.cartCreate.cart.id;
-      cartId = newCartId;
 
-      const cart = await retrieveCart(shopifyClient, cartId);
-      response = NextResponse.json(cart);
+      const cart = await retrieveCart(shopifyClient, newCartId);
+      const response = NextResponse.json(cart);
 
       if (userId) {
         await prisma.user.update({
@@ -84,10 +80,9 @@ export async function POST(request: NextRequest) {
       }
       return response;
 
-    } else {
-      await updateCart(shopifyClient, cartId, merchandiseId, quantity);
     }
 
+    await updateCart(shopifyClient, cartId, merchandiseId, quantity);
     const cart = await retrieveCart(shopifyClient, cartId);
     return NextResponse.json(cart);
 

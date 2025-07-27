@@ -99,9 +99,9 @@ export default function AboutPage() {
               height={150}
               className="rounded-full mx-auto mb-6 shadow-lg"
             />
-            <h3 className="text-2xl font-semibold mb-2">Meet Our Founder, [Founder's Name]</h3>
+            <h3 className="text-2xl font-semibold mb-2">Meet Our Founder, [Founder&apos;s Name]</h3>
             <p className="text-lg text-muted-foreground leading-relaxed">
-              [Founder's Name] started Yoganow with the vision of creating a brand that truly embodies the spirit of yoga. A dedicated yogi and advocate for sustainable living, [Founder's Name]’s passion for quality and mindfulness is at the heart of every product we create.
+              [Founder&apos;s Name] started Yoganow with the vision of creating a brand that truly embodies the spirit of yoga. A dedicated yogi and advocate for sustainable living, [Founder&apos;s Name]&rsquo;s passion for quality and mindfulness is at the heart of every product we create.
             </p>
           </div>
         </section>

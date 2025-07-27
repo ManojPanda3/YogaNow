@@ -1,125 +1,268 @@
-import { PrismaClient } from '@/lib/generated/prisma/client';
-import { addToCart, retrieveCart, updateCart } from '@/lib/shopify/cart';
-import { getShopifyClient } from '@/lib/shopify/getShopifyClient';
-import { GraphQLClient } from 'graphql-request';
-import { headers } from 'next/headers';
-import { NextRequest, NextResponse } from 'next/server';
+import { gql, GraphQLClient } from "graphql-request";
 
-const client = getShopifyClient() as GraphQLClient
-const prisma = new PrismaClient()
+export const getProduct = async (
+  client: GraphQLClient,
+  id: string
+) => {
+  const productQuery = gql`
+    query getProduct($id: ID!) {
+      product(id: $id) {
+        id
+        handle
+        title
+        description
+        priceRange {
+          minVariantPrice {
+            amount
+            currencyCode
+          }
+        }
+        featuredImage {
+          url
+          altText
+        }
+        variants(first: 10) {
+          edges {
+            node {
+              id
+            }
+          }
+        }
+      }
+    }
+  `;
 
-export async function GET(req: NextRequest) {
+  const variables = {
+    id,
+  };
   try {
-
-    const header = await headers()
-    const userId = header.get('X-current-user-id');
-    let cartId = req.nextUrl.searchParams.get('cartId');
-
-    if (userId && !cartId) {
-      const user = await prisma.user.findFirst({ where: { id: userId }, select: { cartId: true } });
-      if (user?.cartId) cartId = user.cartId;
-    }
-
-    if (!cartId) {
-      return NextResponse.json({ message: 'CartId is required', success: false }, { status: 400, statusText: 'Bad Request' });
-    }
-    const cart = await retrieveCart(client, cartId)
-    console.log(cart)
-    return NextResponse.json({ message: 'Successfully fetched cart', cart, success: true }, { status: 200 });
+    const data = await client.request(productQuery, variables);
+    return data.product;
   } catch (error) {
-    console.error('Error fetching cart:', error);
-    return NextResponse.json({ message: 'Unable to fetch cart', success: false }, { status: 500 });
+    throw new Error(error as string);
+  }
+
+};
+
+export async function addToCart(
+  client: GraphQLClient,
+  itemId: string,
+  quantity: number) {
+
+  const createCartMutation = gql`
+  mutation createCart($cartInput: CartInput) {
+    cartCreate(input: $cartInput) {
+      cart {
+        id
+        lines(first: 10) {
+          edges {
+            node {
+              id
+              quantity
+            }
+          }
+        }
+      }
+      userErrors {
+        field
+        message
+      }
+    }
+  }
+`;
+  const variables = {
+    cartInput: {
+      lines: [
+        {
+          quantity: quantity,
+          merchandiseId: itemId,
+        },
+      ],
+    },
+  };
+  try {
+    return await client.request(createCartMutation, variables);
+  } catch (error) {
+    throw new Error(error as string);
   }
 }
 
-export async function POST(req: NextRequest) {
+export async function updateCart(client: GraphQLClient, cartId: string, itemId: string, quantity: number) {
+  const updateCartMutation = gql`
+    mutation cartLinesAdd($cartId: ID!, $lines: [CartLineInput!]!) {
+      cartLinesAdd(cartId: $cartId, lines: $lines) {
+        cart {
+          id
+        }
+        userErrors {
+          field
+          message
+        }
+      }
+    }
+  `;
+  const variables = {
+    cartId: cartId,
+    lines: [
+      {
+        quantity: quantity,
+        merchandiseId: itemId,
+      },
+    ]
+  };
   try {
-    const body = await req.json();
-    const { productId, quantity, name, price, image } = body;
-    const header = await headers();
-    const userId = header.get('X-current-user-id');
-
-    if (!productId || !quantity) {
-      return NextResponse.json({ message: 'Product ID and quantity are required', success: false }, { status: 400, statusText: 'Bad Request' });
-    }
-
-    let cart;
-    let cartIdToUse: string | null = null;
-
-    if (userId) {
-      const user = await prisma.user.findFirst({ where: { id: userId }, select: { cartId: true } });
-      if (user?.cartId) {
-        cartIdToUse = user.cartId;
-      }
-    }
-
-    if (cartIdToUse) {
-      // If cartId exists, update the existing cart
-      cart = await updateCart(client, cartIdToUse, productId, quantity);
-    } else {
-      // Otherwise, create a new cart
-      cart = await addToCart(client, productId, quantity);
-      if (userId && cart?.id) {
-        await prisma.user.update({
-          where: { id: userId },
-          data: { cartId: cart.id },
-        });
-      }
-    }
-
-    console.log('Added to cart:', cart);
-    return NextResponse.json({ message: 'Successfully added to cart', cart, success: true }, { status: 200 });
+    return await client.request(updateCartMutation, variables);
   } catch (error) {
-    console.error('Error adding to cart:', error);
-    return NextResponse.json({ message: 'Unable to add to cart', success: false }, { status: 500 });
+    throw new Error(error as string);
   }
 }
 
-export async function PUT(req: NextRequest) {
+/**
+ * @description Retrieves the entire cart object, including line item edges, for detailed display.
+ */
+export async function retrieveCart(client: GraphQLClient, cartId: string) {
+  const cartQuery = gql`
+    query cartQuery($cartId: ID!) {
+      cart(id: $cartId) {
+        id
+        createdAt
+        updatedAt
+        lines(first: 10) {
+          edges {
+            node {
+              id
+              quantity
+              merchandise {
+                ... on ProductVariant {
+                  id
+                  title
+                  price {
+                    amount
+                    currencyCode
+                  }
+                  image {
+                    url
+                    altText
+                  }
+                  product {
+                    title
+                    handle
+                  }
+                }
+              }
+              estimatedCost {
+                subtotalAmount {
+                  amount
+                  currencyCode
+                }
+                totalAmount {
+                  amount
+                  currencyCode
+                }
+              }
+            }
+          }
+        }
+        estimatedCost {
+          subtotalAmount {
+            amount
+            currencyCode
+          }
+          totalAmount {
+            amount
+            currencyCode
+          }
+        }
+      }
+    }
+  `;
+  const variables = {
+    cartId,
+  };
   try {
-    const body = await req.json();
-    const { cartId: reqCartId, productId, quantity } = body;
-    const header = await headers();
-    const userId = header.get('X-current-user-id');
-
-    let cart;
-    let actualCartId = reqCartId; // Use cartId from request body by default
-
-    if (!productId || quantity === undefined) {
-      return NextResponse.json({ message: 'Product ID and quantity are required' }, { status: 400 });
-    }
-
-    // Determine the actual cartId to use
-    if (userId) {
-      const user = await prisma.user.findFirst({ where: { id: userId }, select: { cartId: true } });
-      if (user?.cartId) {
-        actualCartId = user.cartId; // Prioritize user's stored cartId if logged in
-      }
-    }
-
-    if (!actualCartId) {
-      return NextResponse.json({ message: 'Cart ID is required' }, { status: 400 });
-    }
-
-    if (quantity === 0) {
-      // Remove item from cart
-      const currentCart = await retrieveCart(client, actualCartId);
-      const lineToRemove = currentCart?.lines?.edges.find((edge: any) => edge.node.merchandise.id === productId);
-
-      if (lineToRemove) {
-        cart = await removeFromCart(client, actualCartId, [lineToRemove.node.id]);
-      } else {
-        return NextResponse.json({ message: 'Item not found in cart to remove' }, { status: 404 });
-      }
-    } else {
-      // Update item quantity or add new item
-      cart = await updateCart(client, actualCartId, productId, quantity);
-    }
-
-    console.log('Updated cart:', cart);
-    return NextResponse.json({ message: 'Successfully updated cart', cart }, { status: 200 });
+    const data = await client.request(cartQuery, variables);
+    return data?.cart;
   } catch (error) {
-    console.error('Error updating cart:', error);
-    return NextResponse.json({ message: 'Unable to update cart' }, { status: 500 });
+    throw new Error(error as string);
   }
 }
+
+/**
+ * @description Removes a line item from the cart and returns the updated cart and any user errors.
+ */
+export async function removeFromCart(client: GraphQLClient, cartId: string, lineId: string) {
+  const removeFromCartMutation = gql`
+    mutation cartLinesRemove($cartId: ID!, $lineIds: [ID!]!) {
+      cartLinesRemove(cartId: $cartId, lineIds: $lineIds) {
+        cart {
+          id
+        }
+        userErrors {
+          field
+          message
+        }
+      }
+    }
+  `;
+  const variables = {
+    cartId: cartId,
+    lineIds: [lineId]
+  };
+  try {
+    return await client.request(removeFromCartMutation, variables);
+  } catch (error) {
+    throw new Error(error as string);
+  }
+}
+
+/**
+ * @description Updates the quantity of a line item and returns the updated cart and any user errors.
+ */
+export async function updateCartLines(client: GraphQLClient, cartId: string, lineId: string, quantity: number) {
+  const updateCartLinesMutation = gql`
+    mutation cartLinesUpdate($cartId: ID!, $lines: [CartLineUpdateInput!]!) {
+      cartLinesUpdate(cartId: $cartId, lines: $lines) {
+        cart {
+          id
+        }
+        userErrors {
+          field
+          message
+        }
+      }
+    }
+  `;
+  const variables = {
+    cartId: cartId,
+    lines: [
+      {
+        id: lineId,
+        quantity: quantity
+      }
+    ]
+  };
+  try {
+    return await client.request(updateCartLinesMutation, variables);
+  } catch (error) {
+    throw new Error(error as string);
+  }
+}
+
+export const getCheckoutUrl = async (client: GraphQLClient, cartId: string) => {
+  const getCheckoutUrlQuery = gql`
+    query checkoutURL($cartId: ID!) {
+      cart(id: $cartId) {
+        checkoutUrl
+      }
+    }
+  `;
+  const variables = {
+    cartId: cartId,
+  };
+  try {
+    const { cart } = await client.request(getCheckoutUrlQuery, variables);
+    return cart;
+  } catch (error) {
+    throw new Error(error as string);
+  }
+};

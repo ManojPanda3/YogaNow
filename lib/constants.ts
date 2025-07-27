@@ -1,1 +1,1 @@
-export const HIDDEN_PRODUCT_TAG = 'nextjs-frontend-hidden';
+export const HIDDEN_PRODUCT_TAG = 'yoga-items';

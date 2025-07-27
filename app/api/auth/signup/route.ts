@@ -1,7 +1,6 @@
 import { PrismaClient } from "@/lib/generated/prisma/client";
 import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
-import { randomBytes } from 'node:crypto'
 
 const prisma = new PrismaClient();
 export async function POST(request: Request) {
@@ -29,7 +28,11 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ user: user, success: true, status: 200 }, { status: 200, statusText: 'Success' })
   } catch (error) {
-    return NextResponse.json({ message: error.message, success: false }, { status: 500 })
+    let errorMessage = "An unknown error occurred.";
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+    return NextResponse.json({ message: errorMessage, success: false }, { status: 500 })
   }
 }
 

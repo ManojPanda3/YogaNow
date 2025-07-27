@@ -22,7 +22,7 @@ import { CartSlider } from "./CartSlider"; // 2. Import CartSlider
 const PromoLink = React.forwardRef<
   React.ElementRef<"a">,
   React.ComponentPropsWithoutRef<"a">
->(({ className, title, children, ...props }, ref) => {
+>(({ className, ...props }, ref) => {
   return (
     <li className="row-span-3">
       <NavigationMenuLink asChild>

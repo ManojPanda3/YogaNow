@@ -38,6 +38,7 @@ interface Cart {
       currencyCode: string;
     };
   };
+  checkoutUrl?: string; // Add this line
 }
 
 interface CartContextType {

@@ -36,7 +36,11 @@ export async function POST(request: Request) {
     response.cookies.set("access_token", access_token as string, { httpOnly: true, path: "/" });
     return response;
   } catch (error) {
-    return NextResponse.json({ message: error.message, success: false }, { status: 500 })
+    let errorMessage = "An unknown error occurred.";
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+    return NextResponse.json({ message: errorMessage, success: false }, { status: 500 })
   }
 }
 

@@ -58,7 +58,7 @@ export default function SignupPage() {
         toast.success("Signup successful! Please login.");
         router.push('/auth/login');
 
-      } catch (error: any) {
+      } catch {
         const errorMessage = "An unexpected network error occurred.";
         setErrors({ api: errorMessage });
         toast.error(errorMessage);

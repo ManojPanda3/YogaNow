@@ -26,7 +26,7 @@ export function CartSlider({ isOpen, onOpenChange }: CartSliderProps) {
   // 2. Get the subtotal and checkout URL directly from the Shopify cart object
   // This is more accurate than calculating on the client
   const subtotal = cart?.estimatedCost?.totalAmount;
-  const checkoutUrl = cart?.checkoutUrl;
+  const checkoutUrl = cart?.checkoutUrl ?? '';
 
   const handleCheckout = () => {
     if (checkoutUrl) {

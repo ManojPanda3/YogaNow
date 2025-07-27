@@ -1,31 +1,9 @@
 import { gql, GraphQLClient } from "graphql-request";
-
-interface Product {
-  node: {
-    id: string;
-    description: string;
-    title: string;
-    handle: string;
-    priceRange: {
-      minVariantPrice: { amount: string };
-      maxVariantPrice: { amount: string };
-    };
-    featuredImage: { altText: string; url: string };
-    variants: {
-      edges: {
-        node: {
-          price: {
-            amount: string;
-          };
-        };
-      }[];
-    };
-  };
-}
+import { Product } from "@/types/shopify";
 
 export interface FetchedProducts {
   products: {
-    edges: Product[];
+    edges: { node: Product }[];
   };
 }
 
@@ -80,6 +58,13 @@ export async function getProducts(
             title
             handle
             description
+            descriptionHtml
+            vendor
+            tags
+            seo {
+              title
+              description
+            }
             priceRange {
               minVariantPrice {
                 amount
@@ -114,7 +99,7 @@ export async function getProducts(
       sortKey: sortKey,
       reverse: reverse,
     };
-    const data = await client.request(getFilteredProductsQuery, variables);
+    const data = await client.request(getFilteredProductsQuery, variables) as FetchedProducts;
     return data;
   } catch (error) {
     console.error("Error fetching products:", error);

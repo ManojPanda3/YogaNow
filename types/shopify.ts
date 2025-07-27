@@ -1,59 +1,63 @@
-// types/shopify.ts
-
-export interface ShopifyImage {
-  url: string;
-  altText?: string;
-}
-
-export interface ShopifyPrice {
-  amount: string;
-  currencyCode: string;
-}
-
-export interface ShopifySelectedOption {
-  name: string;
-  value: string;
-}
-
-export interface ShopifyVariant {
-  id: string;
-  title: string;
-  availableForSale: boolean;
-  image: ShopifyImage;
-  price: ShopifyPrice;
-  selectedOptions: ShopifySelectedOption[];
-}
-
-export interface ShopifyProductOption {
-  id: string;
-  name: string;
-  values: string[];
-}
-
-export interface ShopifyProduct {
+export interface Product {
   id: string;
   handle: string;
+  vendor?: string;
   title: string;
-  vendor: string;
-  descriptionHtml: string;
+  descriptionHtml?: string;
   description: string;
-  featuredImage?: ShopifyImage;
-  priceRange: {
-    minVariantPrice: ShopifyPrice;
+  tags?: string[];
+  seo?: {
+    title: string;
+    description: string;
   };
-  options: ShopifyProductOption[];
-  variants: {
-    edges: { node: ShopifyVariant }[];
+  featuredImage?: {
+    url: string;
+    altText: string;
   };
-  images: {
-    edges: { node: ShopifyImage }[];
+  images?: {
+    edges: {
+      node: {
+        url: string;
+        altText: string;
+      };
+    }[];
   };
-}
-
-export interface ShopifyReview {
-  id: string;
-  author: string;
-  rating: number;
-  title: string;
-  body: string;
+  options?: {
+    id: string;
+    name: string;
+    values: string[];
+  }[];
+  priceRange?: {
+    minVariantPrice: {
+      amount: string;
+      currencyCode?: string;
+    };
+    maxVariantPrice?: {
+      amount: string;
+    };
+  };
+  variants?: {
+    edges: {
+      node: {
+        id: string;
+        title: string;
+        availableForSale?: boolean;
+        image?: {
+          url: string;
+          altText: string;
+        };
+        price: {
+          amount: string;
+          currencyCode?: string;
+        };
+        selectedOptions?: {
+          name: string;
+          value: string;
+        }[];
+      };
+    }[];
+  };
+  reviewsMetafield?: {
+    value: string; // The metafield value will be a JSON string
+  } | null;
 }

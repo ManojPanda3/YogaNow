@@ -1,66 +1,5 @@
 import { gql, GraphQLClient } from "graphql-request";
-
-export interface Product {
-  id: string;
-  handle: string;
-  vendor: string;
-  title: string;
-  descriptionHtml: string;
-  description: string;
-  tags: string[];
-  seo: {
-    title: string;
-    description: string;
-  };
-  featuredImage: {
-    url: string;
-    altText: string;
-  };
-  images: {
-    edges: {
-      node: {
-        url: string;
-        altText: string;
-      };
-    }[];
-  };
-  options: {
-    id: string;
-    name: string;
-    values: string[];
-  }[];
-  priceRange?: {
-    minVariantPrice: {
-      amount: string;
-      currencyCode: string;
-    };
-  };
-  variants: {
-    edges: {
-      node: {
-        id: string;
-        title: string;
-        availableForSale: boolean;
-        image: {
-          url: string;
-          altText: string;
-        };
-        price: {
-          amount: string;
-          currencyCode: string;
-        };
-        selectedOptions: {
-          name: string;
-          value: string;
-        }[];
-      };
-    }[];
-  };
-  // This is the new field for fetching reviews from a metafield
-  reviewsMetafield: {
-    value: string; // The metafield value will be a JSON string
-  } | null;
-}
+import { Product } from "@/types/shopify";
 
 export async function getProductByHandle(
   client: GraphQLClient,
@@ -174,6 +113,22 @@ export async function getProductRecommendations(client: GraphQLClient, productId
   }
 }
 
+interface RelatedProductsGQLResponse {
+  product: {
+    collections: {
+      edges: {
+        node: {
+          products: {
+            edges: {
+              node: Product;
+            }[];
+          };
+        };
+      }[];
+    };
+  };
+}
+
 export async function getRelatedProducts(
   client: GraphQLClient,
   productId: string
@@ -227,10 +182,10 @@ export async function getRelatedProducts(
     }
 
     const relatedProducts = collections[0].node.products.edges
-      .map((edge) => edge.node)
+      .map((edge: { node: Product }) => edge.node)
       .filter(Boolean);
 
-    return relatedProducts.filter((product) => product.id !== productId).slice(0, 4);
+    return relatedProducts.filter((product: Product) => product.id !== productId).slice(0, 4);
   } catch (error) {
     console.error("Error fetching related products:", error);
     return [];

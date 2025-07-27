@@ -2,6 +2,7 @@ import { getShopifyClient } from "@/lib/shopify/getShopifyClient";
 import { notFound } from "next/navigation";
 import { FetchedProducts, getProducts } from "@/lib/shopify/getProducts";
 import ProductCard from "@/components/ProductCard";
+import { Product } from "@/types/shopify";
 
 export const Products = async () => {
   const client = getShopifyClient();
@@ -31,7 +32,7 @@ export const Products = async () => {
 
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 md:gap-8">
           {products?.products?.edges?.map(({ node: product }) => (
-            <ProductCard key={product.id} product={product} />
+            <ProductCard key={product.id} product={product as unknown as Product} />
           ))}
         </div>
       </div>

@@ -1,5 +1,72 @@
 import { gql, GraphQLClient } from "graphql-request";
 
+interface CartQueryResponse {
+  cart: {
+    id: string;
+    createdAt: string;
+    updatedAt: string;
+    lines: {
+      edges: {
+        node: {
+          id: string;
+          quantity: number;
+          merchandise: {
+            id: string;
+            title: string;
+            image: {
+              url: string;
+              altText: string;
+            };
+            product: {
+              title: string;
+              handle: string;
+            };
+          };
+          estimatedCost: {
+            totalAmount: {
+              amount: string;
+              currencyCode: string;
+            };
+          };
+        };
+      }[];
+    };
+    estimatedCost: {
+      totalAmount: {
+        amount: string;
+        currencyCode: string;
+      };
+    };
+    checkoutUrl: string;
+  };
+}
+
+interface ProductQueryResponse {
+  product: {
+    id: string;
+    handle: string;
+    title: string;
+    description: string;
+    priceRange: {
+      minVariantPrice: {
+        amount: string;
+        currencyCode: string;
+      };
+    };
+    featuredImage: {
+      url: string;
+      altText: string;
+    };
+    variants: {
+      edges: {
+        node: {
+          id: string;
+        };
+      }[];
+    };
+  };
+}
+
 export const getProduct = async (
   client: GraphQLClient,
   id: string
@@ -36,7 +103,7 @@ export const getProduct = async (
     id,
   };
   try {
-    const data = await client.request(productQuery, variables);
+    const data: ProductQueryResponse = await client.request(productQuery, variables);
     return data.product;
   } catch (error) {
     throw new Error(error as string);
@@ -44,10 +111,22 @@ export const getProduct = async (
 
 };
 
+export interface CartCreateResponse {
+  cartCreate: {
+    cart: {
+      id: string;
+    };
+    userErrors: {
+      field: string[];
+      message: string;
+    }[];
+  };
+}
+
 export async function addToCart(
   client: GraphQLClient,
   itemId: string,
-  quantity: number) {
+  quantity: number): Promise<CartCreateResponse> {
 
   const createCartMutation = gql`
   mutation createCart($cartInput: CartInput) {
@@ -119,6 +198,7 @@ export async function retrieveCart(client: GraphQLClient, cartId: string) {
         id
         createdAt
         updatedAt
+        checkoutUrl
         lines(first: 10) {
           edges {
             node {
@@ -160,7 +240,7 @@ export async function retrieveCart(client: GraphQLClient, cartId: string) {
     cartId,
   };
   try {
-    const data = await client.request(cartQuery, variables);
+    const data = await client.request<CartQueryResponse>(cartQuery, variables);
     return data?.cart;
   } catch (error) {
     throw new Error(error as string);

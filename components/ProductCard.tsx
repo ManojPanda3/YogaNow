@@ -7,8 +7,7 @@ import {
   CardFooter,
   CardHeader,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import type { Product } from "@/lib/shopify/getProduct";
+import type { Product } from "@/types/shopify";
 
 export default function ProductCard({ product }: { product: Product }) {
   const image = product.featuredImage || product.images?.edges[0]?.node;

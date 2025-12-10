@@ -29,7 +29,7 @@
     "graphql-request": "^7.2.0",
     "jose": "^6.0.12",
     "lucide-react": "^0.526.0",
-    "next": "15.3.5",
+    "next": "15.3.6",
     "prisma": "^6.11.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
